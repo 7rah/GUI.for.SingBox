@@ -20,7 +20,7 @@ export class WebSockets {
   public createWS(options: Options) {
     this.beforeConnect()
 
-    const params = { ...options.params, token: this.bearer }
+    const params = { ...options.params, ...(this.bearer ? { token: this.bearer } : {}) }
     const query = new URLSearchParams(params).toString()
     const url = query ? `${options.url}?${query}` : options.url
 

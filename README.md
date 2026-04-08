@@ -42,6 +42,16 @@ cd ..
 wails build
 ```
 
+## Web Mode
+
+You can also run the app as a local web panel:
+
+```bash
+go run . web --listen 127.0.0.1:18080
+```
+
+Then open `http://127.0.0.1:18080` in your browser.
+
 ## Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/GUI-for-Cores/GUI.for.SingBox.svg)](https://starchart.cc/GUI-for-Cores/GUI.for.SingBox)

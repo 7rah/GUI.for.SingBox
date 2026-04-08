@@ -36,16 +36,25 @@ func CreateTray(a *App, icon []byte) (trayStart, trayEnd func()) {
 
 func (a *App) UpdateTray(tray TrayContent) {
 	log.Printf("UpdateTray")
+	if Env.IsWeb {
+		return
+	}
 	updateTray(a, tray)
 }
 
 func (a *App) UpdateTrayMenus(menus []MenuItem) {
 	log.Printf("UpdateTrayMenus")
+	if Env.IsWeb {
+		return
+	}
 	updateTrayMenus(a, menus)
 }
 
 func (a *App) UpdateTrayAndMenus(tray TrayContent, menus []MenuItem) {
 	log.Printf("UpdateTrayAndMenus")
+	if Env.IsWeb {
+		return
+	}
 	updateTray(a, tray)
 	updateTrayMenus(a, menus)
 }

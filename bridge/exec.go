@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func (a *App) Exec(path string, args []string, options ExecOptions) FlagResult {
@@ -113,7 +112,7 @@ func (a *App) ExecBackground(path string, args []string, outEvent string, endEve
 				}
 
 				if !stopOutput {
-					runtime.EventsEmit(a.Ctx, outEvent, text)
+					emitRuntimeEvent(a, outEvent, text)
 
 					if options.StopOutputKeyword != "" && strings.Contains(text, options.StopOutputKeyword) {
 						stopOutput = true
@@ -131,7 +130,7 @@ func (a *App) ExecBackground(path string, args []string, outEvent string, endEve
 			if pidPath != "" {
 				_ = os.Remove(pidPath)
 			}
-			runtime.EventsEmit(a.Ctx, endEvent)
+			emitRuntimeEvent(a, endEvent)
 		}()
 	}
 

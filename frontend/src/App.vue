@@ -1,77 +1,77 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-import { EventsOn, WindowHide, IsStartup } from '@/bridge'
-import { NavigationBar, TitleBar, SplashView, AboutView, CommandView } from '@/components'
-import * as Stores from '@/stores'
-import { exitApp, sampleID, sleep, message } from '@/utils'
+import { EventsOn, WindowHide, IsStartup } from "@/bridge";
+import { NavigationBar, TitleBar, SplashView, AboutView, CommandView } from "@/components";
+import * as Stores from "@/stores";
+import { exitApp, sampleID, sleep, message } from "@/utils";
 
-const loading = ref(true)
-const percent = ref(0)
-const hasError = ref(false)
+const loading = ref(true);
+const percent = ref(0);
+const hasError = ref(false);
 
-const envStore = Stores.useEnvStore()
-const appStore = Stores.useAppStore()
-const pluginsStore = Stores.usePluginsStore()
-const profilesStore = Stores.useProfilesStore()
-const rulesetsStore = Stores.useRulesetsStore()
-const appSettings = Stores.useAppSettingsStore()
-const kernelApiStore = Stores.useKernelApiStore()
-const subscribesStore = Stores.useSubscribesStore()
-const scheduledTasksStore = Stores.useScheduledTasksStore()
+const envStore = Stores.useEnvStore();
+const appStore = Stores.useAppStore();
+const pluginsStore = Stores.usePluginsStore();
+const profilesStore = Stores.useProfilesStore();
+const rulesetsStore = Stores.useRulesetsStore();
+const appSettings = Stores.useAppSettingsStore();
+const kernelApiStore = Stores.useKernelApiStore();
+const subscribesStore = Stores.useSubscribesStore();
+const scheduledTasksStore = Stores.useScheduledTasksStore();
 
 const handleRestartCore = async () => {
   try {
-    await kernelApiStore.restartCore()
+    await kernelApiStore.restartCore();
   } catch (e: any) {
-    message.error(e.message || e)
+    message.error(e.message || e);
   }
-}
+};
 
-EventsOn('onLaunchApp', async ([arg]: string[]) => {
-  if (!arg) return
+EventsOn("onLaunchApp", async ([arg]: string[]) => {
+  if (!arg) return;
 
-  const url = new URL(arg)
-  if (url.pathname.startsWith('//import-remote-profile')) {
-    const _url = url.searchParams.get('url')
-    const _name = decodeURIComponent(url.hash).slice(1) || sampleID()
+  const url = new URL(arg);
+  if (url.pathname.startsWith("//import-remote-profile")) {
+    const _url = url.searchParams.get("url");
+    const _name = decodeURIComponent(url.hash).slice(1) || sampleID();
 
     if (!_url) {
-      message.error('URL missing')
-      return
+      message.error("URL missing");
+      return;
     }
 
     try {
-      await subscribesStore.importSubscribe(_name, _url)
-      message.success('common.success')
+      await subscribesStore.importSubscribe(_name, _url);
+      message.success("common.success");
     } catch (e: any) {
-      message.error(e.message || e)
+      message.error(e.message || e);
     }
   }
-})
+});
 
-EventsOn('onBeforeExitApp', async () => {
+EventsOn("onBeforeExitApp", async () => {
   if (appSettings.app.exitOnClose) {
-    exitApp()
+    exitApp();
   } else {
-    WindowHide()
+    WindowHide();
   }
-})
+});
 
-EventsOn('onExitApp', () => exitApp())
+EventsOn("onExitApp", () => exitApp());
 
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const closeFn = appStore.modalStack.at(-1)
-    closeFn?.()
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const closeFn = appStore.modalStack.at(-1);
+    closeFn?.();
   }
-})
+});
 
 envStore.setupEnv().then(async () => {
   const showError = (err: string) => {
-    hasError.value = true
-    message.error(err)
-  }
+    hasError.value = true;
+    message.error(err);
+  };
 
   await Promise.all([
     appSettings.setupAppSettings(),
@@ -80,25 +80,25 @@ envStore.setupEnv().then(async () => {
     rulesetsStore.setupRulesets(),
     pluginsStore.setupPlugins(),
     scheduledTasksStore.setupScheduledTasks(),
-  ])
+  ]);
 
-  const startTime = performance.now()
-  percent.value = 20
+  const startTime = performance.now();
+  percent.value = 20;
   if (await IsStartup()) {
-    await pluginsStore.onStartupTrigger().catch(showError)
+    await pluginsStore.onStartupTrigger().catch(showError);
   }
 
-  percent.value = 40
-  await pluginsStore.onReadyTrigger().catch(showError)
+  percent.value = 40;
+  await pluginsStore.onReadyTrigger().catch(showError);
 
-  const duration = performance.now() - startTime
-  percent.value = duration < 500 ? 80 : 100
+  const duration = performance.now() - startTime;
+  percent.value = duration < 500 ? 80 : 100;
 
-  await sleep(Math.max(0, 1000 - duration))
+  await sleep(Math.max(0, 1000 - duration));
 
-  loading.value = false
-  kernelApiStore.initCoreState()
-})
+  loading.value = false;
+  kernelApiStore.initCoreState();
+});
 </script>
 
 <template>

@@ -27,6 +27,7 @@ var Env = &EnvResult{
 	PreventExit:  true,
 	FromTaskSch:  false,
 	WebviewPath:  "",
+	IsWeb:        false,
 	AppName:      "",
 	AppVersion:   "v1.22.0",
 	BasePath:     "",
@@ -63,10 +64,12 @@ func CreateApp(fs embed.FS) *App {
 
 	if Env.OS == "darwin" {
 		createMacOSSymlink()
-		createMacOSMenus(app)
+		if !Env.IsWeb {
+			createMacOSMenus(app)
+		}
 	}
 
-	if Env.OS == "windows" {
+	if Env.OS == "windows" && !Env.IsWeb {
 		processFixedWebView2Runtime()
 	}
 
@@ -78,6 +81,10 @@ func CreateApp(fs embed.FS) *App {
 }
 
 func (a *App) IsStartup() bool {
+	if Env.IsWeb {
+		return false
+	}
+
 	if Env.IsStartup {
 		Env.IsStartup = false
 		return true
@@ -87,12 +94,18 @@ func (a *App) IsStartup() bool {
 
 func (a *App) ExitApp() {
 	log.Printf("ExitApp")
+	if Env.IsWeb {
+		return
+	}
 	Env.PreventExit = false
 	runtime.Quit(a.Ctx)
 }
 
 func (a *App) RestartApp() FlagResult {
 	log.Printf("RestartApp")
+	if Env.IsWeb {
+		return FlagResult{true, "Unsupported in web mode"}
+	}
 	exePath := Env.BasePath + "/" + Env.AppName
 
 	cmd := exec.Command(exePath)
@@ -113,6 +126,7 @@ func (a *App) GetEnv(key string) any {
 		return os.Getenv(key)
 	}
 	return EnvResult{
+		IsWeb:        Env.IsWeb,
 		AppName:      Env.AppName,
 		AppVersion:   Env.AppVersion,
 		BasePath:     Env.BasePath,
@@ -141,6 +155,9 @@ func (a *App) GetInterfaces() FlagResult {
 
 func (a *App) ShowMainWindow() {
 	log.Printf("ShowMainWindow")
+	if Env.IsWeb {
+		return
+	}
 	runtime.WindowShow(a.Ctx)
 }
 

@@ -18,6 +18,7 @@ type EnvResult struct {
 	PreventExit  bool   `json:"-"`
 	FromTaskSch  bool   `json:"-"`
 	WebviewPath  string `json:"-"`
+	IsWeb        bool   `json:"isWeb"`
 	AppName      string `json:"appName"`
 	AppVersion   string `json:"appVersion"`
 	BasePath     string `json:"basePath"`

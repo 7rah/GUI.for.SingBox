@@ -16,8 +16,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var requestCounter uint64
@@ -150,14 +148,15 @@ func handleHttpRequest(a *App, serverID string) http.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(a.Ctx, 60*time.Second) // 60s
 		defer cancel()
+		defer offRuntimeEvent(a, requestID)
 
-		runtime.EventsOn(ctx, requestID, func(data ...any) {
-			defer runtime.EventsOff(ctx, requestID)
+		onRuntimeEvent(a, requestID, func(data ...any) {
+			defer offRuntimeEvent(a, requestID)
 			resp := buildResponse(data)
 			respChan <- resp
 		})
 
-		runtime.EventsEmit(a.Ctx, serverID, requestID, r.Method, r.URL.RequestURI(), r.Header, body)
+		emitRuntimeEvent(a, serverID, requestID, r.Method, r.URL.RequestURI(), r.Header, body)
 
 		select {
 		case res := <-respChan:

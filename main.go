@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"guiforcores/bridge"
+	"os"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -23,12 +24,28 @@ var assets embed.FS
 var icon []byte
 
 func main() {
+	webMode, listenAddr, err := bridge.ParseWebMode(os.Args[1:])
+	if err != nil {
+		println("Error:", err.Error())
+		return
+	}
+	if webMode {
+		bridge.Env.IsWeb = true
+	}
+
 	app := bridge.CreateApp(assets)
+
+	if webMode {
+		if err := bridge.RunWebServer(app, assets, listenAddr); err != nil {
+			println("Error:", err.Error())
+		}
+		return
+	}
 
 	trayStart, trayEnd := bridge.CreateTray(app, icon)
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		MinWidth:         600,
 		MinHeight:        400,
 		DisableResize:    false,

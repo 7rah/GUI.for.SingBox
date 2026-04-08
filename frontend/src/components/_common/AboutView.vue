@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+import { useI18n } from "vue-i18n";
 
-import logo from '@/assets/logo'
-import { RestartApp, BrowserOpenURL, ExitApp } from '@/bridge'
-import { useAppStore, useEnvStore } from '@/stores'
+import logo from "@/assets/logo";
+import { RestartApp, BrowserOpenURL, ExitApp } from "@/bridge";
+import { useAppStore, useEnvStore } from "@/stores";
 import {
   APP_TITLE,
   APP_VERSION,
@@ -12,29 +12,32 @@ import {
   TG_CHANNEL,
   message,
   RunWithOsaScript,
-} from '@/utils'
-import { OS } from '@/enums/app'
+} from "@/utils";
+import { OS } from "@/enums/app";
 
-const { t } = useI18n()
-const envStore = useEnvStore()
-const appStore = useAppStore()
+const { t } = useI18n();
+const envStore = useEnvStore();
+const appStore = useAppStore();
+const isWeb = envStore.env.isWeb;
 
 const handleRestartApp = async () => {
   try {
     if (envStore.env.os === OS.Darwin) {
-      RunWithOsaScript('open', [envStore.env.basePath.replace('/Contents/MacOS', '')], {
+      RunWithOsaScript("open", [envStore.env.basePath.replace("/Contents/MacOS", "")], {
         wait: false,
-      })
-      await ExitApp()
+      });
+      await ExitApp();
     } else {
-      await RestartApp()
+      await RestartApp();
     }
   } catch (error: any) {
-    message.error(error)
+    message.error(error);
   }
-}
+};
 
-appStore.checkForUpdates()
+if (!isWeb) {
+  appStore.checkForUpdates();
+}
 </script>
 
 <template>
@@ -42,14 +45,19 @@ appStore.checkForUpdates()
     <img :src="logo" class="w-128" draggable="false" />
     <div class="py-8 font-bold">{{ APP_TITLE }}</div>
     <div class="flex items-center pb-8 my-4">
+      <template v-if="isWeb">
+        <Button type="link" size="small">
+          Host: {{ envStore.env.appVersion }} - UI: {{ APP_VERSION }}
+        </Button>
+      </template>
       <Button
-        v-if="appStore.restartable"
+        v-else-if="appStore.restartable"
         icon="restartApp"
         size="small"
         type="primary"
         @click="handleRestartApp"
       >
-        {{ t('about.restart') }}
+        {{ t("about.restart") }}
       </Button>
       <template v-else>
         <Button
@@ -66,7 +74,7 @@ appStore.checkForUpdates()
           size="small"
           @click="appStore.downloadApp"
         >
-          {{ t('about.new') }}: {{ appStore.remoteVersion }}
+          {{ t("about.new") }}: {{ appStore.remoteVersion }}
         </Button>
       </template>
     </div>

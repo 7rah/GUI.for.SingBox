@@ -1,47 +1,48 @@
-import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { defineStore } from "pinia";
+import { ref, watch } from "vue";
 
-import { GetEnv } from '@/bridge'
-import { useAppSettingsStore, useKernelApiStore } from '@/stores'
-import { updateTrayAndMenus, SetSystemProxy, GetSystemProxy } from '@/utils'
-import { OS } from '@/enums/app'
-import type { AppEnv } from '@/types/app'
+import { GetEnv } from "@/bridge";
+import { useAppSettingsStore, useKernelApiStore } from "@/stores";
+import { updateTrayAndMenus, SetSystemProxy, GetSystemProxy } from "@/utils";
+import { OS } from "@/enums/app";
+import type { AppEnv } from "@/types/app";
 
-export const useEnvStore = defineStore('env', () => {
-  const appSettings = useAppSettingsStore()
-  const kernelApiStore = useKernelApiStore()
+export const useEnvStore = defineStore("env", () => {
+  const appSettings = useAppSettingsStore();
+  const kernelApiStore = useKernelApiStore();
 
   const env = ref<AppEnv>({
-    appName: '',
-    appVersion: '',
-    basePath: '',
-    appPath: '',
-    os: '' as OS,
-    arch: '',
+    isWeb: false,
+    appName: "",
+    appVersion: "",
+    basePath: "",
+    appPath: "",
+    os: "" as OS,
+    arch: "",
     isPrivileged: false,
-  })
+  });
 
-  const systemProxy = ref(false)
+  const systemProxy = ref(false);
 
   const setupEnv = async () => {
-    const _env = await GetEnv()
-    let appPath = `${_env.basePath}/${_env.appName}`
+    const _env = await GetEnv();
+    let appPath = `${_env.basePath}/${_env.appName}`;
     if (_env.os === OS.Windows) {
-      appPath = appPath.replaceAll('/', '\\')
+      appPath = appPath.replaceAll("/", "\\");
     } else if (_env.os === OS.Darwin) {
-      appPath = appPath.replace(`/Contents/MacOS/${_env.appName}`, '')
+      appPath = appPath.replace(`/Contents/MacOS/${_env.appName}`, "");
     }
-    env.value = { ..._env, appPath }
-  }
+    env.value = { ..._env, appPath };
+  };
 
   const updateSystemProxyStatus = async () => {
-    const kernelApiStore = useKernelApiStore()
-    const proxyServer = await GetSystemProxy()
+    const kernelApiStore = useKernelApiStore();
+    const proxyServer = await GetSystemProxy();
 
     if (!proxyServer) {
-      systemProxy.value = false
+      systemProxy.value = false;
     } else {
-      const { port, 'mixed-port': mixedPort, 'socks-port': socksPort } = kernelApiStore.config
+      const { port, "mixed-port": mixedPort, "socks-port": socksPort } = kernelApiStore.config;
       const proxyServerList = [
         `http://127.0.0.1:${port}`,
         `http://127.0.0.1:${mixedPort}`,
@@ -51,42 +52,42 @@ export const useEnvStore = defineStore('env', () => {
 
         `socks=127.0.0.1:${mixedPort}`,
         `socks=127.0.0.1:${socksPort}`,
-      ]
-      systemProxy.value = proxyServerList.includes(proxyServer)
+      ];
+      systemProxy.value = proxyServerList.includes(proxyServer);
     }
 
-    return systemProxy.value
-  }
+    return systemProxy.value;
+  };
 
   const setSystemProxy = async () => {
-    const proxyBypassList = appSettings.app.proxyBypassList
-    let proxyPort = kernelApiStore.getProxyPort()
+    const proxyBypassList = appSettings.app.proxyBypassList;
+    let proxyPort = kernelApiStore.getProxyPort();
 
     if (!proxyPort) {
-      await kernelApiStore.updateConfig('inbound', undefined)
+      await kernelApiStore.updateConfig("inbound", undefined);
     }
 
-    proxyPort = kernelApiStore.getProxyPort()
+    proxyPort = kernelApiStore.getProxyPort();
 
-    if (!proxyPort) throw 'home.overview.needPort'
+    if (!proxyPort) throw "home.overview.needPort";
 
-    await SetSystemProxy(true, '127.0.0.1:' + proxyPort.port, proxyPort.proxyType, proxyBypassList)
+    await SetSystemProxy(true, "127.0.0.1:" + proxyPort.port, proxyPort.proxyType, proxyBypassList);
 
-    systemProxy.value = true
-  }
+    systemProxy.value = true;
+  };
 
   const clearSystemProxy = async () => {
-    const proxyBypassList = appSettings.app.proxyBypassList
-    await SetSystemProxy(false, '', undefined, proxyBypassList)
-    systemProxy.value = false
-  }
+    const proxyBypassList = appSettings.app.proxyBypassList;
+    await SetSystemProxy(false, "", undefined, proxyBypassList);
+    systemProxy.value = false;
+  };
 
   const switchSystemProxy = async (enable: boolean) => {
-    if (enable) await setSystemProxy()
-    else await clearSystemProxy()
-  }
+    if (enable) await setSystemProxy();
+    else await clearSystemProxy();
+  };
 
-  watch(systemProxy, updateTrayAndMenus)
+  watch(systemProxy, updateTrayAndMenus);
 
   return {
     env,
@@ -96,5 +97,5 @@ export const useEnvStore = defineStore('env', () => {
     clearSystemProxy,
     switchSystemProxy,
     updateSystemProxyStatus,
-  }
-})
+  };
+});

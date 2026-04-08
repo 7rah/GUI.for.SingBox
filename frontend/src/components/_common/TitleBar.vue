@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
-import logo from '@/assets/logo'
+import logo from "@/assets/logo";
 import {
   WindowSetAlwaysOnTop,
   WindowHide,
@@ -10,65 +10,79 @@ import {
   WindowToggleMaximise,
   WindowIsMaximised,
   RestartApp,
-} from '@/bridge'
-import { useAppSettingsStore, useKernelApiStore, useEnvStore, useAppStore } from '@/stores'
-import { APP_TITLE, APP_VERSION, debounce, exitApp, reloadApp } from '@/utils'
+} from "@/bridge";
+import { useAppSettingsStore, useKernelApiStore, useEnvStore, useAppStore } from "@/stores";
+import { APP_TITLE, APP_VERSION, debounce, exitApp, reloadApp } from "@/utils";
 
-import type { Menu } from '@/types/app'
-import { OS } from '@/enums/app'
+import type { Menu } from "@/types/app";
+import { OS } from "@/enums/app";
 
-const isPinned = ref(false)
-const isMaximised = ref(false)
+const isPinned = ref(false);
+const isMaximised = ref(false);
 
-const appSettingsStore = useAppSettingsStore()
-const kernelApiStore = useKernelApiStore()
-const envStore = useEnvStore()
-const appStore = useAppStore()
+const appSettingsStore = useAppSettingsStore();
+const kernelApiStore = useKernelApiStore();
+const envStore = useEnvStore();
+const appStore = useAppStore();
 
-const isDarwin = envStore.env.os === OS.Darwin
+const isDarwin = envStore.env.os === OS.Darwin;
+const showWindowControls = computed(() => !envStore.env.isWeb && !isDarwin);
 
 const pinWindow = () => {
-  isPinned.value = !isPinned.value
-  WindowSetAlwaysOnTop(isPinned.value)
-}
+  isPinned.value = !isPinned.value;
+  WindowSetAlwaysOnTop(isPinned.value);
+};
 
 const closeWindow = async () => {
   if (appSettingsStore.app.exitOnClose) {
-    exitApp()
+    exitApp();
   } else {
-    WindowHide()
+    WindowHide();
   }
-}
+};
 
-const menus: Menu[] = [
-  {
-    label: 'titlebar.resetSize',
-    handler: () => WindowSetSize(800, 540),
-  },
-  {
-    label: 'titlebar.reload',
-    handler: reloadApp,
-  },
-  {
-    label: 'titlebar.restart',
-    handler: RestartApp,
-  },
-  {
-    label: 'titlebar.exitApp',
-    handler: exitApp,
-  },
-]
+const menus = computed<Menu[]>(() => {
+  const items: Menu[] = [
+    {
+      label: "titlebar.reload",
+      handler: reloadApp,
+    },
+  ];
+
+  if (!envStore.env.isWeb) {
+    items.unshift({
+      label: "titlebar.resetSize",
+      handler: () => WindowSetSize(800, 540),
+    });
+    items.push(
+      {
+        label: "titlebar.restart",
+        handler: RestartApp,
+      },
+      {
+        label: "titlebar.exitApp",
+        handler: exitApp,
+      },
+    );
+  }
+
+  return items;
+});
 
 const onResize = debounce(async () => {
-  isMaximised.value = await WindowIsMaximised()
-}, 100)
+  isMaximised.value = await WindowIsMaximised();
+}, 100);
 
-onMounted(() => window.addEventListener('resize', onResize))
-onUnmounted(() => window.removeEventListener('resize', onResize))
+onMounted(() => window.addEventListener("resize", onResize));
+onUnmounted(() => window.removeEventListener("resize", onResize));
 </script>
 
 <template>
-  <div v-menu="menus" class="flex items-center py-8 gap-8 px-12" style="--wails-draggable: drag">
+  <div
+    v-menu="menus"
+    class="flex items-center py-8 gap-8 px-12"
+    :style="{ '--wails-draggable': envStore.env.isWeb ? 'disabled' : 'drag' }"
+  >
     <img v-if="!isDarwin" class="w-24 h-24" draggable="false" :src="logo" />
 
     <div
@@ -90,7 +104,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
     </div>
 
     <div
-      v-if="!isDarwin"
+      v-if="showWindowControls"
       class="ml-auto flex items-center gap-4"
       style="--wails-draggable: disabled"
     >
